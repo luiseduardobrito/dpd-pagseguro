@@ -1,6 +1,8 @@
 var util = require('util');
 
+var internalClient = require('deployd/lib/internal-client');
 var Resource = require('deployd/lib/resource')
+var UserCollection = require('deployd/lib/resources/user-collection');
 var Pagseguro = require("./pagseguro");
 var Settings = require("./settings.js");
 
@@ -32,35 +34,72 @@ PagSeguroResource.prototype.handle = function (ctx, next) {
 
 	}, config.currency);
 
+	if (ctx.method === "GET") {
+
+		ctx.dpd.users.me(function(me, err) {
+
+			console.log(me)
+
+			if(err) {
+				return ctx.done(err, null);
+			}
+
+			else if(!me) {
+				ctx.res.statusCode = 403;
+				return ctx.done('forbidden');
+			}
+
+			ctx.done(me);
+		});	
+	}
+
 	// Nova transação
-	if (ctx.method === "POST" && this.events.post) {
+	else if (ctx.method === "POST" && this.events.post) {
 
 		var _post = this.events.post;
 
-		this.pagseguro.order(ctx.body.items, ctx.body.buyer, urls, function(err, res) {
+		// ger user information
+		ctx.dpd.users.me(function(me, err) {
 
-			if(err) console.log(err)
+			if(err) {
+				return ctx.done(err, null);
+			}
 
-			var result = {};
+			else if(!me) {
+				ctx.res.statusCode = 403;
+				return ctx.done('forbidden');
+			}
 
-			var domain = {
-
-				request: {
-					query: ctx.query,
-					body: ctx.body
-				},
-
-				response: res,
-
-				setResult: function(val) {
-					result = val;
-				}
+			var buyer = {
+				name: me.name,
+				email: me.email
 			};
 
-			_post.run(ctx, domain, function(err) {
-				ctx.done(err, result);
-			});
-		})
+			this.pagseguro.order(ctx.body.items, buyer, urls, function(err, res) {
+
+				if(err) console.log(err)
+
+				var result = {};
+
+				var domain = {
+
+					request: {
+						query: ctx.query,
+						body: ctx.body
+					},
+
+					response: res,
+
+					setResult: function(val) {
+						result = val;
+					}
+				};
+
+				_post.run(ctx, domain, function(err) {
+					ctx.done(err, result);
+				});
+			})
+		}); 
 	} 
 
 	else {
