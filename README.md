@@ -1,9 +1,10 @@
 dpd-pagseguro
 ===============
 
-Módulo de pagamentos via PagSeguro para Deployd.
 
-Esse módulo está descontinuado, e pode ser usado livremente para estudo e pesquisa. Não deve ser usado em transações reais.
+> Esse módulo está **descontinuado**, pode ser usado livremente para estudo e pesquisa mas não deve ser usado em transações reais.
+
+Módulo de pagamentos via PagSeguro para Deployd.
 
 ### License
 
